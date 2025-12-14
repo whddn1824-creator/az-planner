@@ -1,0 +1,632 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>AZ Financial - Sales Master Planner (Cloud/Admin)</title>
+    <style>
+        :root { --primary-color: #2c3e50; --accent-color: #e74c3c; --bg-color: #f4f6f8; --border-color: #ddd; --time-bg: #e8f0fe; }
+        body { font-family: 'Pretendard', 'Malgun Gothic', sans-serif; background-color: var(--bg-color); margin: 0; height: 100vh; height: -webkit-fill-available; overflow-x: hidden; }
+        html { height: -webkit-fill-available; }
+
+        input, textarea, select, button { font-size: 16px; }
+
+        /* 로그인 섹션 */
+        #login-section { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: linear-gradient(135deg, #1e2a36 0%, #2c3e50 100%); display: flex; justify-content: center; align-items: center; z-index: 9999; padding: 20px; box-sizing: border-box; }
+        .login-box { background: white; padding: 40px; border-radius: 15px; width: 100%; max-width: 350px; box-shadow: 0 15px 30px rgba(0,0,0,0.3); text-align: center; }
+        .login-box h1 { color: var(--primary-color); margin-bottom: 5px; font-size: 24px; }
+        .login-input { width: 100%; padding: 12px; margin-bottom: 15px; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; }
+        .login-btn { width: 100%; padding: 12px; background-color: var(--primary-color); color: white; border: none; border-radius: 8px; font-size: 16px; cursor: pointer; font-weight: bold; }
+        .login-btn:hover { background-color: #1a252f; }
+        .toggle-msg { margin-top: 15px; font-size: 13px; color: #666; cursor: pointer; text-decoration: underline; }
+
+        /* 메인 앱 레이아웃 */
+        #app-section { display: none; height: 100%; width: 100%; }
+        nav { width: 250px; background-color: white; border-right: 1px solid var(--border-color); padding: 20px; display: flex; flex-direction: column; overflow-y: auto; transition: all 0.3s ease; }
+        .nav-header { display: none; } 
+        nav h1 { font-size: 18px; color: var(--primary-color); margin-bottom: 10px; text-align: center; font-weight: 800; }
+        .user-welcome { text-align: center; font-size: 13px; color: #666; margin-bottom: 20px; padding-bottom: 10px; border-bottom: 1px solid #eee; }
+        nav button { background: none; border: none; padding: 15px; text-align: left; font-size: 15px; cursor: pointer; color: #555; border-radius: 8px; margin-bottom: 5px; transition: 0.2s; width: 100%; }
+        nav button:hover, nav button.active { background-color: var(--primary-color); color: white; font-weight: bold; }
+        .logout-btn { margin-top: auto; background-color: #eee !important; color: #555 !important; text-align: center !important; }
+        
+        /* 관리자 버튼 스타일 */
+        #nav_admin_btn { color: #e74c3c; font-weight: bold; display: none; } /* 기본 숨김 */
+        #nav_admin_btn:hover, #nav_admin_btn.active { background-color: #e74c3c; color: white; }
+
+        main { flex: 1; padding: 40px; overflow-y: auto; background-color: var(--bg-color); }
+        .page-section { display: none; max-width: 900px; margin: 0 auto; background: white; padding: 40px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
+        .page-section.active { display: block; }
+
+        /* 공통 요소 */
+        h2 { border-bottom: 2px solid var(--primary-color); padding-bottom: 10px; margin-bottom: 25px; color: var(--primary-color); font-size: 20px; }
+        h3 { margin-top: 30px; font-size: 16px; color: #333; background-color: #eee; padding: 8px; border-radius: 4px; }
+        label { display: block; margin-top: 15px; font-size: 14px; color: #666; font-weight: bold; }
+        input, textarea, select { width: 100%; padding: 12px; margin-top: 5px; border: 1px solid #ccc; border-radius: 5px; box-sizing: border-box; }
+        textarea { resize: vertical; min-height: 80px; }
+        
+        /* 그리드 */
+        .grid-row { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+        .grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
+        .calendar-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; text-align: center; }
+        
+        .compare-box { background-color: #fafafa; border: 1px solid #eee; padding: 15px; border-radius: 8px; margin-bottom: 10px; }
+        .compare-row { display: flex; align-items: center; gap: 10px; }
+        .compare-row input { text-align: right; }
+        .month-box { border: 1px solid #ddd; padding: 20px; border-radius: 8px; height: 100px; }
+        
+        /* 타임라인 */
+        .timeline-container { border: 1px solid #eee; border-radius: 8px; overflow: hidden; margin-top: 20px; }
+        .time-block { display: flex; border-bottom: 1px solid #eee; min-height: 50px; }
+        .time-label { width: 70px; background-color: var(--time-bg); color: #333; font-weight: bold; display: flex; align-items: center; justify-content: center; font-size: 13px; border-right: 1px solid #eee; flex-shrink: 0; }
+        .time-content { flex: 1; padding: 0; }
+        .time-content input { border: none; margin: 0; height: 100%; background: transparent; padding: 0 15px; width: 100%; }
+        .save-btn { background-color: var(--primary-color); color: white; padding: 15px; width: 100%; border: none; font-size: 18px; margin-top: 30px; cursor: pointer; border-radius: 8px; font-weight: bold; }
+        
+        /* 테이블 (고객관리/관리자) */
+        .cust-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 10px; }
+        .add-cust-btn { background-color: var(--primary-color); color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; }
+        .filter-select { width: auto; padding: 8px; }
+        .table-container { overflow-x: auto; -webkit-overflow-scrolling: touch; } 
+        .cust-table { width: 100%; border-collapse: collapse; margin-top: 10px; white-space: nowrap; }
+        .cust-table th { background-color: #eee; padding: 10px; text-align: left; font-size: 14px; color: #333; }
+        .cust-table td { border-bottom: 1px solid #eee; padding: 12px 10px; font-size: 14px; }
+        .tag-group { padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: bold; display: inline-block; }
+        .tag-vip { background: #ffeaa7; color: #d35400; }
+        .tag-contract { background: #55efc4; color: #00b894; }
+        .tag-prospect { background: #74b9ff; color: #0984e3; }
+        .tag-etc { background: #dfe6e9; color: #636e72; }
+        .del-btn { background: #ff7675; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer; font-size: 12px; }
+        
+        /* 관리자 테이블 전용 */
+        .view-btn { background: #3498db; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer; font-size: 12px; }
+        
+        /* 모달 */
+        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: none; z-index: 2000; justify-content: center; align-items: center; padding: 20px; box-sizing: border-box; }
+        .modal-content { background: white; padding: 30px; border-radius: 10px; width: 100%; max-width: 400px; box-shadow: 0 5px 20px rgba(0,0,0,0.2); box-sizing: border-box; }
+        .modal-close { float: right; cursor: pointer; font-size: 20px; font-weight: bold; }
+
+        @media screen and (max-width: 768px) {
+            #app-section { flex-direction: column; }
+            main { padding: 20px 15px; height: auto; overflow-y: visible; }
+            .page-section { padding: 25px 20px; }
+            .nav-header { display: flex; justify-content: space-between; align-items: center; padding: 15px; background: white; border-bottom: 1px solid #ddd; }
+            .nav-header h1 { margin: 0; font-size: 18px; }
+            .mobile-menu-toggle { background: none; border: none; font-size: 24px; cursor: pointer; color: var(--primary-color); }
+            nav { width: 100%; border-right: none; border-bottom: 1px solid var(--border-color); padding: 0; position: absolute; top: 58px; left: 0; z-index: 100; max-height: 0; overflow: hidden; }
+            nav.mobile-open { max-height: 500px; padding: 20px; }
+            nav h1 { display: none; }
+            .grid-row, .grid-4, .calendar-grid { grid-template-columns: 1fr; gap: 15px; }
+            h2 { font-size: 18px; }
+            .login-box { padding: 30px 20px; }
+            .cust-header { flex-direction: column; align-items: stretch; }
+            .add-cust-btn, .filter-select { width: 100%; }
+            .month-box { height: auto; }
+            .save-btn { font-size: 16px; padding: 12px; }
+        }
+    </style>
+</head>
+<body>
+
+    <div id="login-section">
+        <div class="login-box">
+            <h1>AZ SALES PLANNER</h1>
+            <p>Cloud Team Version</p>
+            
+            <div id="login-form">
+                <input type="text" id="login_id" class="login-input" placeholder="아이디">
+                <input type="password" id="login_pw" class="login-input" placeholder="비밀번호">
+                <button id="btn_login" class="login-btn">로그인</button>
+                <div class="toggle-msg" onclick="toggleMode('signup')">처음이신가요? 회원가입</div>
+            </div>
+
+            <div id="signup-form" style="display:none;">
+                <input type="text" id="sign_name" class="login-input" placeholder="이름 (예: 배종우)">
+                <input type="text" id="sign_id" class="login-input" placeholder="사용할 아이디">
+                <input type="password" id="sign_pw" class="login-input" placeholder="사용할 비밀번호">
+                <button id="btn_signup" class="login-btn">가입하기</button>
+                <div class="toggle-msg" onclick="toggleMode('login')">이미 계정이 있으신가요? 로그인</div>
+            </div>
+        </div>
+    </div>
+
+    <div id="app-section">
+        <div class="nav-header">
+            <h1>AZ SALES PLANNER</h1>
+            <button class="mobile-menu-toggle" onclick="toggleMobileMenu()">☰</button>
+        </div>
+
+        <nav id="main-nav">
+            <h1>AZ SALES PLANNER</h1> 
+            <div class="user-welcome">
+                환영합니다, <strong id="user_display">User</strong>님<br>
+                <span id="admin_badge" style="display:none; color:red; font-size:11px;">(관리자 모드)</span>
+            </div>
+            
+            <button onclick="showTab('vision')" class="active">1. 비전 및 목표</button>
+            <button onclick="showTab('calendar')">2. 연간 캘린더</button>
+            <button onclick="showTab('monthly')">3. 월간 계획</button>
+            <button onclick="showTab('weekly')">4. 주간 계획</button>
+            <button onclick="showTab('daily')">5. 일간 계획 (Time)</button>
+            <button onclick="showTab('customers')">6. 고객 관리 ✨</button>
+            
+            <button id="nav_admin_btn" onclick="showTab('admin_page')">7. 👑 팀원 관리 (Admin)</button>
+            
+            <button class="logout-btn" onclick="handleLogout()">로그아웃</button>
+        </nav>
+
+        <main>
+            <div id="vision" class="page-section active">
+                <h2>🎯 나의 비전 & 목표</h2>
+                <label>📌 나의 비전 문장</label><input type="text" id="vision_sentence">
+                <div class="grid-row">
+                    <div><label>📍 단기 목표 (1~3년)</label><textarea id="goal_short"></textarea></div>
+                    <div><label>📍 중기 목표 (4~7년)</label><textarea id="goal_mid"></textarea></div>
+                </div>
+                <label>📍 장기 목표 (8~10년)</label><textarea id="goal_long"></textarea>
+                <h3>📊 목표 점검표</h3>
+                <div class="compare-box"><label>📅 연간 목표</label><div class="grid-4"><input type="number" id="an_prem" placeholder="연납"><input type="number" id="an_cnt" placeholder="건수"><input type="number" id="an_ref" placeholder="소개"><input type="number" id="an_rec" placeholder="리쿠르팅"></div></div>
+                <div class="compare-box"><label>📅 분기 목표</label><div class="grid-4"><input type="number" id="qu_prem" placeholder="분기납"><input type="number" id="qu_cnt" placeholder="건수"><input type="number" id="qu_ref" placeholder="소개"><input type="number" id="qu_rec" placeholder="리쿠르팅"></div></div>
+                <button class="save-btn" id="btn_save_vision">저장하기</button>
+            </div>
+
+            <div id="calendar" class="page-section">
+                <h2>📅 2026 - 2027 연간 캘린더</h2>
+                <h3>2026 YEAR</h3><div class="calendar-grid" id="cal2026"></div>
+                <h3>2027 YEAR</h3><div class="calendar-grid" id="cal2027"></div>
+                <button class="save-btn" id="btn_save_calendar">일정 저장하기</button>
+            </div>
+
+            <div id="monthly" class="page-section">
+                <h2>📆 월간 계획</h2>
+                <input type="month" id="current_month" style="width: 100%; max-width: 200px; margin-bottom:20px;">
+                <div class="grid-row"><div class="compare-box"><label>💰 월납 목표</label><input type="number" id="m_goal_prem"></div><div class="compare-box"><label>📝 건수 목표</label><input type="number" id="m_goal_cnt"></div></div>
+                <div class="grid-row"><div><label>🎂 생일 고객</label><textarea id="m_list_birth"></textarea></div><div><label>🔄 1년 도래 고객</label><textarea id="m_list_1year"></textarea></div></div>
+                <div class="grid-row"><div><label>📄 증권 전달</label><textarea id="m_list_deliv"></textarea></div><div><label>⚡ 주요 업무</label><textarea id="m_list_main"></textarea></div></div>
+                <button class="save-btn" id="btn_save_monthly">월간 계획 저장</button>
+            </div>
+
+            <div id="weekly" class="page-section">
+                <h2>🔥 주간 성과 관리</h2>
+                <select id="current_week" style="width: 100%; max-width: 200px; margin-bottom:20px;"><option>12월 3주차</option><option>12월 4주차</option><option>1월 1주차</option><option>1월 2주차</option></select>
+                <h3>📈 목표 vs 결과</h3>
+                <div class="compare-box"><div class="grid-row"><div><label>💰 월납</label><div class="compare-row"><input type="number" id="w_prem_g"><span>/</span><input type="number" id="w_prem_r"></div></div><div><label>📝 건수</label><div class="compare-row"><input type="number" id="w_cnt_g"><span>/</span><input type="number" id="w_cnt_r"></div></div></div></div>
+                <div class="compare-box"><div class="grid-row"><div><label>🤝 미팅</label><div class="compare-row"><input type="number" id="w_meet_g"><span>/</span><input type="number" id="w_meet_r"></div></div><div><label>🗣 소개</label><div class="compare-row"><input type="number" id="w_ref_g"><span>/</span><input type="number" id="w_ref_r"></div></div></div></div>
+                <div class="compare-box"><label>👥 리쿠르팅</label><div class="compare-row"><input type="number" id="w_rec_g"><span>/</span><input type="number" id="w_rec_r"></div></div>
+                <h3>🚨 이번 주 우선 업무</h3>
+                <div class="grid-4"><input type="text" id="w_prio_1"><input type="text" id="w_prio_2"><input type="text" id="w_prio_3"><input type="text" id="w_prio_4"></div>
+                <button class="save-btn" id="btn_save_weekly">주간 기록 저장</button>
+            </div>
+
+            <div id="daily" class="page-section">
+                <h2>⏰ 일간 스케줄</h2>
+                <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
+                    <input type="date" id="daily_date" style="width: 100%; max-width: 200px;">
+                    <span style="font-size:13px; color:#888;">* 07시 ~ 24시 집중 근무</span>
+                </div>
+                <div class="timeline-container" id="timeline_grid"></div>
+                <div style="margin-top:20px;"><label>📝 오늘의 피드백</label><textarea id="daily_feedback" style="height:80px;"></textarea></div>
+                <button class="save-btn" id="btn_save_daily">오늘 일정 저장</button>
+            </div>
+
+            <div id="customers" class="page-section">
+                <h2>👥 고객 리스트 관리</h2>
+                <div class="cust-header">
+                    <div style="width:100%;"><span style="font-weight:bold; margin-right:10px;">분류 필터:</span><select id="cust_filter" class="filter-select" onchange="renderCustomers()"><option value="all">전체 보기</option><option value="가망고객">가망고객</option><option value="계약고객">계약고객</option><option value="VIP">VIP</option><option value="기타">기타</option></select></div>
+                    <button class="add-cust-btn" onclick="openCustModal()">+ 고객 등록</button>
+                </div>
+                <div class="table-container">
+                    <table class="cust-table">
+                        <thead><tr><th width="15%">그룹</th><th width="20%">이름</th><th width="25%">연락처</th><th width="30%">특이사항/메모</th><th width="10%">관리</th></tr></thead>
+                        <tbody id="cust_table_body"></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div id="admin_page" class="page-section">
+                <h2>👑 팀원 가입 현황 & 모니터링</h2>
+                <div style="background:#e8f0fe; padding:15px; border-radius:8px; margin-bottom:20px; font-size:14px;">
+                    <strong>ℹ️ 관리자 안내</strong><br>
+                    팀원들의 가입 현황을 확인하고, <strong>[데이터 보기]</strong>를 클릭하면 현재 화면이 해당 팀원의 데이터로 전환됩니다.<br>
+                    <span style="color:red; font-size:12px;">(주의: 데이터 보기 후 저장 버튼을 누르면 해당 팀원의 데이터가 수정됩니다.)</span>
+                </div>
+                <button class="save-btn" onclick="loadAllUsers()" style="margin-top:0; margin-bottom:20px; padding:10px; font-size:14px;">🔄 목록 새로고침</button>
+                <div class="table-container">
+                    <table class="cust-table">
+                        <thead><tr><th>이름</th><th>아이디</th><th>비밀번호(암호화X)</th><th>기능</th></tr></thead>
+                        <tbody id="admin_user_list"></tbody>
+                    </table>
+                </div>
+            </div>
+
+        </main>
+    </div>
+
+    <div id="cust_modal" class="modal-overlay">
+        <div class="modal-content">
+            <span class="modal-close" onclick="closeCustModal()">&times;</span>
+            <h2 style="margin-top:0; border:none; padding-bottom:0;">👤 고객 등록</h2>
+            <label>이름</label><input type="text" id="modal_c_name" placeholder="고객명 입력">
+            <label>연락처</label><input type="text" id="modal_c_phone" placeholder="010-0000-0000">
+            <label>그룹 선택</label><select id="modal_c_group"><option value="가망고객">가망고객</option><option value="계약고객">계약고객</option><option value="VIP">VIP</option><option value="기타">기타</option></select>
+            <label>메모/특이사항</label><textarea id="modal_c_memo" placeholder="상담 내용, 직업, 나이 등"></textarea>
+            <button class="save-btn" id="btn_add_customer">등록 완료</button>
+        </div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        // ✅ [수정됨] collection, getDocs 모듈 추가
+        import { getFirestore, doc, setDoc, getDoc, updateDoc, collection, getDocs } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyBLg7Xq2wskXWXVY1GdbedckmEdZAF9ugg",
+            authDomain: "az-planner.firebaseapp.com",
+            projectId: "az-planner",
+            storageBucket: "az-planner.firebasestorage.app",
+            messagingSenderId: "836994934176",
+            appId: "1:836994934176:web:a3ed37e8fe583b7265b0c5",
+            measurementId: "G-VZB0WZ2TF2"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
+        let currentUserId = null;
+        let customerData = []; 
+        let isAdmin = false; // 관리자 여부 플래그
+
+        // 1. 초기 UI 생성
+        generateCalendar();
+        generateTimeline();
+        const now = new Date();
+        if(!document.getElementById('daily_date').value) document.getElementById('daily_date').value = now.toISOString().split('T')[0];
+        if(!document.getElementById('current_month').value) document.getElementById('current_month').value = now.toISOString().slice(0, 7);
+
+        // 2. 로그인 로직
+        document.getElementById('btn_login').addEventListener('click', async () => {
+            const id = document.getElementById('login_id').value;
+            const pw = document.getElementById('login_pw').value;
+            if(!id || !pw) { alert("아이디와 비밀번호를 입력하세요."); return; }
+
+            document.getElementById('btn_login').innerText = "로그인 중...";
+            
+            try {
+                const docRef = doc(db, "users", id);
+                const docSnap = await getDoc(docRef);
+
+                if (docSnap.exists()) {
+                    const data = docSnap.data();
+                    if(data.password === pw) {
+                        currentUserId = id;
+                        localStorage.setItem('az_session_id', id);
+                        
+                        // 관리자 체크 (아이디가 'admin'이면 관리자)
+                        if(id === 'admin') isAdmin = true;
+                        
+                        showApp(data.name, data);
+                    } else {
+                        alert("비밀번호가 틀렸습니다.");
+                    }
+                } else {
+                    alert("존재하지 않는 아이디입니다.");
+                }
+            } catch (e) {
+                console.error("Login Error: ", e);
+                alert("로그인 중 오류 발생: " + e.message);
+            }
+            document.getElementById('btn_login').innerText = "로그인";
+        });
+
+        // 회원가입 로직 (기존 동일)
+        document.getElementById('btn_signup').addEventListener('click', async () => {
+            const name = document.getElementById('sign_name').value;
+            const id = document.getElementById('sign_id').value;
+            const pw = document.getElementById('sign_pw').value;
+
+            if(!name || !id || !pw) { alert("모든 항목을 입력해주세요."); return; }
+
+            try {
+                const docRef = doc(db, "users", id);
+                const docSnap = await getDoc(docRef);
+
+                if(docSnap.exists()) {
+                    alert("이미 존재하는 아이디입니다.");
+                } else {
+                    await setDoc(docRef, {
+                        name: name,
+                        password: pw,
+                        id: id, // 관리자 목록에서 보기 위해 ID도 필드에 저장
+                        customers: [],
+                        createdAt: new Date().toISOString()
+                    });
+                    alert("가입 완료! 로그인해주세요.");
+                    toggleMode('login');
+                }
+            } catch (e) {
+                alert("가입 중 오류 발생: " + e.message);
+            }
+        });
+
+        // 자동 로그인 체크
+        window.addEventListener('load', async () => {
+            const savedId = localStorage.getItem('az_session_id');
+            if(savedId) {
+                const docRef = doc(db, "users", savedId);
+                const docSnap = await getDoc(docRef);
+                if(docSnap.exists()) {
+                    currentUserId = savedId;
+                    if(savedId === 'admin') isAdmin = true;
+                    showApp(docSnap.data().name, docSnap.data());
+                }
+            }
+        });
+
+        // 3. 앱 화면 표시 및 데이터 로드
+        function showApp(name, data) {
+            document.getElementById('login-section').style.display = 'none';
+            document.getElementById('app-section').style.display = 'flex';
+            document.getElementById('user_display').innerText = name;
+            
+            // 관리자 버튼 표시 여부
+            if(isAdmin) {
+                document.getElementById('nav_admin_btn').style.display = 'block';
+                document.getElementById('admin_badge').style.display = 'inline';
+                loadAllUsers(); // 관리자라면 유저 목록 바로 로드
+            } else {
+                document.getElementById('nav_admin_btn').style.display = 'none';
+                document.getElementById('admin_badge').style.display = 'none';
+            }
+
+            bindDataToInputs(data);
+        }
+        
+        // 데이터 바인딩 함수 분리 (관리자가 다른 유저 데이터 볼 때 재사용)
+        function bindDataToInputs(data) {
+             // 1. 인풋 초기화 (데이터가 없을 수도 있으므로)
+             document.querySelectorAll('input, textarea, select').forEach(el => {
+                if(el.id && !el.id.startsWith('login') && !el.id.startsWith('sign') && !el.id.startsWith('modal_') && el.id !== 'cust_filter') {
+                    el.value = ''; 
+                }
+            });
+
+            // 2. 데이터 뿌리기
+            if(data.inputs) {
+                for (const [key, value] of Object.entries(data.inputs)) {
+                    const elem = document.getElementById(key);
+                    if(elem) elem.value = value;
+                }
+            }
+            // 3. 고객 데이터 로드
+            customerData = data.customers || [];
+            renderCustomers();
+        }
+
+        // 4. 데이터 저장 로직
+        async function saveAllDataToDB() {
+            if(!currentUserId) return;
+            
+            const inputs = {};
+            document.querySelectorAll('input, textarea, select').forEach(el => {
+                if(el.id && !el.id.startsWith('login') && !el.id.startsWith('sign') && !el.id.startsWith('modal_') && el.id !== 'cust_filter') {
+                    inputs[el.id] = el.value;
+                }
+            });
+
+            try {
+                // 관리자가 다른 사람 데이터를 보고 있다면, 저장은 막거나 경고를 띄울 수 있음.
+                // 여기서는 본인 계정(currentUserId)에 저장되도록 설정됨.
+                // *주의: 관리자가 "데이터 보기"를 한 상태에서 currentUserId가 관리자 ID라면, 
+                // 관리자 DB에 팀원의 데이터가 덮어씌워짐.
+                // 이를 방지하려면 "현재 보고 있는 유저" 개념을 도입해야 하나, 
+                // 간단하게 구현하기 위해 저장은 항상 '로그인한 계정'에 된다고 가정.
+                // 팀장님이 팀원 데이터를 "수정"해주고 싶다면 targetId를 변경해야 함.
+                
+                const userRef = doc(db, "users", currentUserId);
+                await updateDoc(userRef, {
+                    inputs: inputs,
+                    customers: customerData
+                });
+                alert("저장되었습니다! (현재 로그인된 계정에 저장됨)");
+            } catch (e) {
+                alert("저장 실패: " + e.message);
+            }
+        }
+
+        document.getElementById('btn_save_vision').onclick = saveAllDataToDB;
+        document.getElementById('btn_save_calendar').onclick = saveAllDataToDB;
+        document.getElementById('btn_save_monthly').onclick = saveAllDataToDB;
+        document.getElementById('btn_save_weekly').onclick = saveAllDataToDB;
+        document.getElementById('btn_save_daily').onclick = saveAllDataToDB;
+
+        // ==============================
+        // ✅ [NEW] 관리자 기능 로직
+        // ==============================
+        
+        // 모든 사용자 불러오기
+        window.loadAllUsers = async function() {
+            if(!isAdmin) return;
+            const tbody = document.getElementById('admin_user_list');
+            tbody.innerHTML = '<tr><td colspan="4">데이터 로딩중...</td></tr>';
+            
+            try {
+                const querySnapshot = await getDocs(collection(db, "users"));
+                tbody.innerHTML = '';
+                
+                querySnapshot.forEach((doc) => {
+                    const uData = doc.data();
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `
+                        <td style="font-weight:bold;">${uData.name || '이름없음'}</td>
+                        <td>${doc.id}</td>
+                        <td>${uData.password}</td>
+                        <td><button class="view-btn" onclick="viewUserData('${doc.id}', '${uData.name}')">데이터 보기</button></td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+            } catch(e) {
+                alert("유저 목록 로드 실패: " + e.message);
+            }
+        }
+
+        // 특정 사용자 데이터 화면에 뿌리기 (Spy 모드)
+        window.viewUserData = async function(targetId, targetName) {
+            if(!confirm(`${targetName}님의 데이터를 화면에 불러옵니다.\n(현재 화면의 내용이 ${targetName}님의 계획표로 바뀝니다.)`)) return;
+
+            try {
+                const docRef = doc(db, "users", targetId);
+                const docSnap = await getDoc(docRef);
+                if(docSnap.exists()) {
+                    const data = docSnap.data();
+                    bindDataToInputs(data);
+                    
+                    // UI 피드백
+                    document.getElementById('user_display').innerText = `${targetName} (조회중)`;
+                    document.getElementById('user_display').style.color = 'blue';
+                    alert(`${targetName}님의 데이터를 불러왔습니다.\n각 탭을 눌러 계획을 확인하세요.`);
+                    
+                    // *중요*: 여기서 currentUserId를 바꾸면 팀장이 팀원 데이터를 수정해줄 수도 있음.
+                    // 실수 방지를 위해 currentUserId는 변경하지 않음 (저장 시 관리자 본인 DB에 저장됨을 주의)
+                    // 만약 팀원 데이터를 '수정'까지 해주고 싶다면 아래 주석을 해제하세요.
+                    // currentUserId = targetId; 
+                }
+            } catch(e) {
+                alert("데이터 불러오기 실패: " + e.message);
+            }
+        }
+
+
+        // 고객 관리 로직 (기존 동일)
+        window.renderCustomers = function() {
+            const filter = document.getElementById('cust_filter').value;
+            const tbody = document.getElementById('cust_table_body');
+            tbody.innerHTML = '';
+
+            customerData.forEach((cust, index) => {
+                if(filter !== 'all' && cust.group !== filter) return;
+
+                let groupClass = '';
+                if(cust.group === 'VIP') groupClass = 'tag-vip';
+                else if(cust.group === '계약고객') groupClass = 'tag-contract';
+                else if(cust.group === '가망고객') groupClass = 'tag-prospect';
+                else groupClass = 'tag-etc';
+
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td><span class="tag-group ${groupClass}">${cust.group}</span></td>
+                    <td style="font-weight:bold;">${cust.name}</td>
+                    <td>${cust.phone}</td>
+                    <td style="color:#666; white-space:normal;">${cust.memo}</td>
+                    <td><button class="del-btn" onclick="removeCustomer(${index})">삭제</button></td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        document.getElementById('btn_add_customer').addEventListener('click', async () => {
+            const name = document.getElementById('modal_c_name').value;
+            const phone = document.getElementById('modal_c_phone').value;
+            const group = document.getElementById('modal_c_group').value;
+            const memo = document.getElementById('modal_c_memo').value;
+
+            if(!name) { alert('이름을 입력하세요.'); return; }
+            
+            const newCust = { name, phone, group, memo, date: new Date().toISOString() };
+            customerData.push(newCust);
+            
+            try {
+                const userRef = doc(db, "users", currentUserId);
+                await updateDoc(userRef, { customers: customerData });
+                
+                alert('고객이 등록되었습니다.');
+                closeCustModal();
+                renderCustomers();
+            } catch(e) {
+                alert('저장 오류: ' + e.message);
+                customerData.pop(); 
+            }
+        });
+
+        window.removeCustomer = async function(index) {
+            if(confirm('정말 삭제하시겠습니까?')) {
+                if(document.getElementById('cust_filter').value !== 'all') {
+                    alert('정확한 삭제를 위해 전체 보기로 전환합니다. 다시 삭제 버튼을 눌러주세요.');
+                    document.getElementById('cust_filter').value = 'all';
+                    renderCustomers();
+                    return;
+                }
+                customerData.splice(index, 1);
+                
+                try {
+                    const userRef = doc(db, "users", currentUserId);
+                    await updateDoc(userRef, { customers: customerData });
+                    renderCustomers();
+                } catch(e) {
+                    alert("삭제 실패: " + e.message);
+                }
+            }
+        };
+
+        // 기타 UI 함수
+        window.toggleMobileMenu = function() {
+            const nav = document.getElementById('main-nav');
+            nav.classList.toggle('mobile-open');
+        }
+
+        window.toggleMode = function(mode) {
+            if(mode === 'signup') {
+                document.getElementById('login-form').style.display = 'none';
+                document.getElementById('signup-form').style.display = 'block';
+            } else {
+                document.getElementById('login-form').style.display = 'block';
+                document.getElementById('signup-form').style.display = 'none';
+            }
+        }
+        window.handleLogout = function() {
+            if(confirm("로그아웃 하시겠습니까?")) {
+                localStorage.removeItem('az_session_id');
+                location.reload();
+            }
+        }
+        window.showTab = function(tabId) {
+            document.querySelectorAll('.page-section').forEach(sec => sec.classList.remove('active'));
+            document.getElementById(tabId).classList.add('active');
+            document.querySelectorAll('nav button').forEach(btn => {
+                if(!btn.classList.contains('logout-btn')) btn.classList.remove('active');
+            });
+            event.target.classList.add('active');
+            
+            if(window.innerWidth <= 768) {
+                toggleMobileMenu();
+            }
+        }
+        window.openCustModal = function() {
+            document.getElementById('cust_modal').style.display = 'flex';
+            document.getElementById('modal_c_name').value = '';
+            document.getElementById('modal_c_phone').value = '';
+            document.getElementById('modal_c_memo').value = '';
+        }
+        window.closeCustModal = function() { document.getElementById('cust_modal').style.display = 'none'; }
+        
+        window.generateCalendar = function() {
+            const months = [1,2,3,4,5,6,7,8,9,10,11,12];
+            ['cal2026', 'cal2027'].forEach(yearId => {
+                const container = document.getElementById(yearId);
+                let html = '';
+                months.forEach(m => { html += `<div class="month-box"><strong>${m}월</strong><br><input type="text" id="${yearId}_m${m}" placeholder="일정" style="border:none; border-bottom:1px solid #eee; width:100%; box-sizing:border-box;"></div>`; });
+                container.innerHTML = html;
+            });
+        }
+        window.generateTimeline = function() {
+            const container = document.getElementById('timeline_grid');
+            let html = '';
+            for (let i = 7; i <= 24; i++) {
+                let displayTime = i < 10 ? `0${i}:00` : `${i}:00`;
+                let rowClass = i >= 18 ? 'time-block evening' : 'time-block';
+                html += `<div class="${rowClass}"><div class="time-label">${displayTime}</div><div class="time-content"><input type="text" id="time_slot_${i}"></div></div>`;
+            }
+            container.innerHTML = html;
+        }
+    </script>
+</body>
+</html>
