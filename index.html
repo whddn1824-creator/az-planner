@@ -1,0 +1,434 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AZ Financial - Sales Master Planner</title>
+    <style>
+        :root {
+            --primary-color: #2c3e50; /* 짙은 네이비 */
+            --accent-color: #e74c3c; /* 포인트 레드 (목표 달성 강조) */
+            --bg-color: #f4f6f8;
+            --border-color: #ddd;
+        }
+
+        body {
+            font-family: 'Pretendard', 'Malgun Gothic', sans-serif;
+            background-color: var(--bg-color);
+            margin: 0;
+            display: flex;
+            height: 100vh;
+        }
+
+        /* 왼쪽 사이드바 메뉴 */
+        nav {
+            width: 250px;
+            background-color: white;
+            border-right: 1px solid var(--border-color);
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        nav h1 {
+            font-size: 20px;
+            color: var(--primary-color);
+            margin-bottom: 30px;
+            text-align: center;
+            font-weight: 800;
+        }
+
+        nav button {
+            background: none;
+            border: none;
+            padding: 15px;
+            text-align: left;
+            font-size: 16px;
+            cursor: pointer;
+            color: #555;
+            border-radius: 8px;
+            margin-bottom: 5px;
+            transition: 0.2s;
+        }
+
+        nav button:hover, nav button.active {
+            background-color: var(--primary-color);
+            color: white;
+            font-weight: bold;
+        }
+
+        /* 메인 콘텐츠 영역 */
+        main {
+            flex: 1;
+            padding: 40px;
+            overflow-y: auto;
+        }
+
+        .page-section {
+            display: none; /* 기본적으로 숨김 */
+            max-width: 900px;
+            margin: 0 auto;
+            background: white;
+            padding: 40px;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+        }
+
+        .page-section.active {
+            display: block; /* 활성화된 탭만 보임 */
+        }
+
+        h2 {
+            border-bottom: 2px solid var(--primary-color);
+            padding-bottom: 10px;
+            margin-bottom: 25px;
+            color: var(--primary-color);
+        }
+
+        h3 {
+            margin-top: 30px;
+            font-size: 18px;
+            color: #333;
+            background-color: #eee;
+            padding: 8px;
+            border-radius: 4px;
+        }
+
+        /* 공통 입력 스타일 */
+        label {
+            display: block;
+            margin-top: 10px;
+            font-size: 14px;
+            color: #666;
+            font-weight: bold;
+        }
+
+        input[type="text"], input[type="number"], textarea, select {
+            width: 100%;
+            padding: 10px;
+            margin-top: 5px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            font-size: 14px;
+            box-sizing: border-box;
+        }
+
+        textarea {
+            resize: vertical;
+            min-height: 80px;
+        }
+
+        /* 그리드 레이아웃 (테이블 대신 사용) */
+        .grid-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+        
+        .grid-4 {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 10px;
+        }
+
+        /* 목표 vs 결과 비교 스타일 */
+        .compare-box {
+            background-color: #fafafa;
+            border: 1px solid #eee;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 10px;
+        }
+        .compare-row {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .compare-row input {
+            text-align: right;
+        }
+        .unit {
+            font-size: 12px;
+            color: #888;
+            white-space: nowrap;
+        }
+
+        /* 캘린더 스타일 (간단 보기) */
+        .calendar-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+            text-align: center;
+        }
+        .month-box {
+            border: 1px solid #ddd;
+            padding: 20px;
+            border-radius: 8px;
+            height: 100px; /* 메모 가능 공간 */
+        }
+
+        /* 저장 버튼 */
+        .save-btn {
+            background-color: var(--primary-color);
+            color: white;
+            padding: 15px;
+            width: 100%;
+            border: none;
+            font-size: 16px;
+            margin-top: 30px;
+            cursor: pointer;
+            border-radius: 8px;
+        }
+        .save-btn:hover {
+            background-color: #1a252f;
+        }
+
+    </style>
+</head>
+<body>
+
+    <nav>
+        <h1>AZ SALES PLANNER</h1>
+        <button onclick="showTab('vision')" class="active">1. 비전 및 목표</button>
+        <button onclick="showTab('calendar')">2. 연간 캘린더 (26-27)</button>
+        <button onclick="showTab('monthly')">3. 월간 계획</button>
+        <button onclick="showTab('weekly')">4. 주간 계획</button>
+    </nav>
+
+    <main>
+        <div id="vision" class="page-section active">
+            <h2>🎯 나의 비전 & 목표 (Vision & Goals)</h2>
+            
+            <label>📌 나의 비전 문장</label>
+            <input type="text" id="vision_sentence" placeholder="예: 2027년까지 본부장 달성 및 100명의 리더 육성">
+
+            <div class="grid-row">
+                <div>
+                    <label>📍 단기 목표 (1~3년)</label>
+                    <textarea id="goal_short"></textarea>
+                </div>
+                <div>
+                    <label>📍 중기 목표 (4~7년)</label>
+                    <textarea id="goal_mid"></textarea>
+                </div>
+            </div>
+            <label>📍 장기 목표 (8~10년)</label>
+            <textarea id="goal_long"></textarea>
+
+            <h3>📊 목표 점검표 (Target Check-up)</h3>
+            <div class="compare-box">
+                <label>📅 연간 목표 (Annual)</label>
+                <div class="grid-4">
+                    <input type="number" id="an_prem" placeholder="연납(만원)">
+                    <input type="number" id="an_cnt" placeholder="건수(건)">
+                    <input type="number" id="an_ref" placeholder="소개확보(명)">
+                    <input type="number" id="an_rec" placeholder="리쿠르팅(명)">
+                </div>
+            </div>
+            <div class="compare-box">
+                <label>📅 분기 목표 (Quarterly)</label>
+                <div class="grid-4">
+                    <input type="number" id="qu_prem" placeholder="분기납(만원)">
+                    <input type="number" id="qu_cnt" placeholder="건수(건)">
+                    <input type="number" id="qu_ref" placeholder="소개확보(명)">
+                    <input type="number" id="qu_rec" placeholder="리쿠르팅(명)">
+                </div>
+            </div>
+            <button class="save-btn" onclick="saveAll()">저장하기</button>
+        </div>
+
+        <div id="calendar" class="page-section">
+            <h2>📅 2026 - 2027 연간 캘린더</h2>
+            <p style="text-align:center; color:#666;">주요 일정을 월별 박스에 간단히 메모하세요.</p>
+            
+            <h3>2026 YEAR</h3>
+            <div class="calendar-grid" id="cal2026">
+                </div>
+
+            <h3>2027 YEAR</h3>
+            <div class="calendar-grid" id="cal2027">
+                 </div>
+            <button class="save-btn" onclick="saveAll()">일정 저장하기</button>
+        </div>
+
+        <div id="monthly" class="page-section">
+            <h2>📆 월간 계획 (Monthly Plan)</h2>
+            <input type="month" id="current_month" style="width: 200px; margin-bottom:20px;">
+
+            <div class="grid-row">
+                <div class="compare-box">
+                    <label>💰 월납 보험료 목표 (만원)</label>
+                    <input type="number" id="m_goal_prem">
+                </div>
+                <div class="compare-box">
+                    <label>📝 계약 건수 목표 (건)</label>
+                    <input type="number" id="m_goal_cnt">
+                </div>
+            </div>
+
+            <div class="grid-row">
+                <div>
+                    <label>🎂 생일 고객 리스트</label>
+                    <textarea id="m_list_birth" placeholder="홍길동(15일), 김철수(20일)..."></textarea>
+                </div>
+                <div>
+                    <label>🔄 계약 1년 도래 고객 (유지율 관리)</label>
+                    <textarea id="m_list_1year" placeholder="이영희, 박지성..."></textarea>
+                </div>
+            </div>
+
+            <div class="grid-row">
+                <div>
+                    <label>📄 보험증권 전달 대상</label>
+                    <textarea id="m_list_deliv"></textarea>
+                </div>
+                <div>
+                    <label>⚡ 이달의 주요 업무 리스트</label>
+                    <textarea id="m_list_main"></textarea>
+                </div>
+            </div>
+            <button class="save-btn" onclick="saveAll()">월간 계획 저장</button>
+        </div>
+
+        <div id="weekly" class="page-section">
+            <h2>🔥 주간 성과 관리 (Weekly Action)</h2>
+            <select id="current_week" style="width: 200px; margin-bottom:20px;">
+                <option>12월 3주차</option>
+                <option>12월 4주차</option>
+                <option>1월 1주차</option>
+                <option>1월 2주차</option>
+            </select>
+
+            <h3>📈 목표 vs 결과 (Goal vs Result)</h3>
+            
+            <div class="compare-box">
+                <div class="grid-row">
+                    <div>
+                        <label>💰 월납 보험료 (만원)</label>
+                        <div class="compare-row">
+                            <input type="number" id="w_prem_g" placeholder="목표"> 
+                            <span>/</span>
+                            <input type="number" id="w_prem_r" placeholder="결과">
+                        </div>
+                    </div>
+                    <div>
+                        <label>📝 계약 건수 (건)</label>
+                        <div class="compare-row">
+                            <input type="number" id="w_cnt_g" placeholder="목표">
+                            <span>/</span>
+                            <input type="number" id="w_cnt_r" placeholder="결과">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="compare-box">
+                <div class="grid-row">
+                    <div>
+                        <label>🤝 미팅 횟수 (건)</label>
+                        <div class="compare-row">
+                            <input type="number" id="w_meet_g" placeholder="목표">
+                            <span>/</span>
+                            <input type="number" id="w_meet_r" placeholder="결과">
+                        </div>
+                    </div>
+                    <div>
+                        <label>🗣 소개 고객 확보 (명)</label>
+                        <div class="compare-row">
+                            <input type="number" id="w_ref_g" placeholder="목표">
+                            <span>/</span>
+                            <input type="number" id="w_ref_r" placeholder="결과">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="compare-box">
+                <label>👥 리쿠르팅 미팅 (명)</label>
+                <div class="compare-row">
+                    <input type="number" id="w_rec_g" placeholder="목표">
+                    <span>/</span>
+                    <input type="number" id="w_rec_r" placeholder="결과">
+                </div>
+            </div>
+
+            <h3>🚨 이번 주 우선 업무 (Top 4)</h3>
+            <div class="grid-4">
+                <input type="text" id="w_prio_1" placeholder="1. 가장 중요한 일">
+                <input type="text" id="w_prio_2" placeholder="2.">
+                <input type="text" id="w_prio_3" placeholder="3.">
+                <input type="text" id="w_prio_4" placeholder="4.">
+            </div>
+
+            <button class="save-btn" onclick="saveAll()">주간 기록 저장</button>
+        </div>
+
+    </main>
+
+    <script>
+        // 1. 탭 전환 기능
+        function showTab(tabId) {
+            // 모든 섹션 숨기기
+            document.querySelectorAll('.page-section').forEach(sec => sec.classList.remove('active'));
+            // 선택된 섹션 보이기
+            document.getElementById(tabId).classList.add('active');
+            
+            // 메뉴 버튼 스타일 업데이트
+            document.querySelectorAll('nav button').forEach(btn => btn.classList.remove('active'));
+            event.target.classList.add('active');
+        }
+
+        // 2. 캘린더 생성 기능 (26년, 27년)
+        function generateCalendar() {
+            const months = [1,2,3,4,5,6,7,8,9,10,11,12];
+            
+            ['cal2026', 'cal2027'].forEach(yearId => {
+                const container = document.getElementById(yearId);
+                let html = '';
+                months.forEach(m => {
+                    html += `
+                        <div class="month-box">
+                            <strong>${m}월</strong><br>
+                            <input type="text" id="${yearId}_m${m}" placeholder="주요 일정" style="border:none; border-bottom:1px solid #eee; width:90%;">
+                        </div>
+                    `;
+                });
+                container.innerHTML = html;
+            });
+        }
+
+        // 3. 데이터 저장 및 불러오기 (Local Storage)
+        function saveAll() {
+            const inputs = document.querySelectorAll('input, textarea, select');
+            inputs.forEach(input => {
+                if(input.id) {
+                    localStorage.setItem(input.id, input.value);
+                }
+            });
+            alert('모든 내용이 저장되었습니다! 💾');
+        }
+
+        function loadAll() {
+            const inputs = document.querySelectorAll('input, textarea, select');
+            inputs.forEach(input => {
+                if(input.id) {
+                    const saved = localStorage.getItem(input.id);
+                    if(saved) input.value = saved;
+                }
+            });
+        }
+
+        // 초기화
+        window.onload = function() {
+            generateCalendar(); // 캘린더 그리기
+            loadAll();          // 저장된 데이터 불러오기
+            
+            // 월간 계획 날짜 기본값 (오늘)
+            const today = new Date().toISOString().slice(0, 7);
+            if(!localStorage.getItem('current_month')) {
+                document.getElementById('current_month').value = today;
+            }
+        };
+    </script>
+</body>
+</html>
